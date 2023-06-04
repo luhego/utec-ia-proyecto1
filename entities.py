@@ -7,19 +7,12 @@ class State:
 
 
 class Action:
-    def __init__(self, name):
+    def __init__(self, name, current_state, next_state, probability, cost=1):
         self.name = name
-        self.transitions = []
-
-    def add_transition(self, transition):
-        self.transitions.append(transition)
-
-
-class Transition:
-    def __init__(self, current_state, next_state, probability):
         self.current_state = current_state
         self.next_state = next_state
         self.probability = probability
+        self.cost = cost
 
     def __repr__(self) -> str:
-        return f"Transition[current_state={self.current_state}, next_state={self.next_state}, probability={self.probability}]"
+        return f"Action[{self.name}, {self.current_state}, {self.next_state}, {self.probability}, {self.cost}]"
