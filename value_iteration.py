@@ -13,7 +13,10 @@ class ValueIteration:
 
         self.num_states = len(self.states.keys())
 
-    # Ejecutamos el algoritmo de iteración de valor
+    """
+    Ejecutamos el algoritmo de iteración de valor mientras el residual calculado sea menor al epsilon.
+    """
+
     def run(self):
         iteration = 1
         max_residual = self.__run_one_step()
@@ -22,6 +25,17 @@ class ValueIteration:
             max_residual = self.__run_one_step()
 
         self.__calculate_policy()
+
+    """
+    Corremos una iteración del algoritmo de iteración de valor de la siguiente manera:
+
+    1. Recorremos todos los estados.
+    2. Para cada estado:
+     2.1. Corremos el algoritmo Bellman backup para calcular la función de valor del estado y la acción escogida.
+     2.2. Actualizamos la función de valor para el estado.
+     2.3. Calculamos el residual calculando el valor absoluto de la diferencia del valor actual del estado y el valor previo.
+    4. Calculamos el residual maximo de todos los residuales calculados.
+    """
 
     def __run_one_step(self):
         max_residual = 0
@@ -47,6 +61,13 @@ class ValueIteration:
         max_residual = max(residuals)
         return max_residual
 
+    """
+    Corremos el algoritmo Bellman backup para un estado de la siguiente manera:
+    1. Iteramos todas las acciones disponibles para el estado:
+    2. Para cada accion, calculamos el valor.
+    3. Escogemos la acción con el menor valor.
+    """
+
     def __run_bellman_backup(self, state):
         if state == self.goal_state:
             state.value = 0
@@ -56,8 +77,8 @@ class ValueIteration:
         actions_values = []
         for action in state.actions:
             value = 0
-            for branch in action.branches:
-                value += branch.probability * (action.cost + branch.next_state.value)
+            for transition in action.transitions:
+                value += transition.probability * (action.cost + transition.next_state.value)
             actions_values.append((action, value))
 
         # Escogemos la accion con el menor valor
@@ -73,10 +94,4 @@ class ValueIteration:
             if state == self.goal_state:
                 print(state.name + " goal state 0")
             else:
-                print(
-                    state.name
-                    + " "
-                    + state.selected_action.name
-                    + " "
-                    + str(state.value)
-                )
+                print(state.name + " " + state.selected_action.name + " " + str(state.value))

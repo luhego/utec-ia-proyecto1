@@ -1,9 +1,15 @@
 from collections import defaultdict
 
-from entities import State, Action, ActionBranch
+from entities import State, Action, Transition
 
 
 class FileLoader:
+    """
+    Una clase que representa un file loader. El file loader se utiliza para leer los archivos
+    de entrada e instancias del problema y extraer la información necesario como los estados,
+    acciones, costos, estado inicial y final.
+    """
+
     def __init__(self, file_path):
         self.file_path = file_path
 
@@ -21,6 +27,11 @@ class FileLoader:
 
         return states, initial_state, goal_state
 
+    """
+    Extraemos los estados del archivo de entrada en un diccionario con el siguiente formato:
+    states = {"robot-at-x1y1": State("robot-at-x1y1"), ...}
+    """
+
     def __get_states(self, rows):
         states = {}
         state_index = rows.index("states\n") + 1
@@ -29,6 +40,14 @@ class FileLoader:
             state = State(state_name.strip())
             states[state_name] = state
         return states
+
+    """
+    Extraemos las acciones del archivo de entrada en un diccionario con el siguiente formato:
+        actions = {
+            ("robot-at-x1y1", "move_south"): {"next_state": "robot-at-x1y1", "probability": 1},
+            ...
+        }
+    """
 
     def __get_actions(self, rows):
         actions = defaultdict(list)
@@ -53,6 +72,19 @@ class FileLoader:
 
         return actions
 
+    """
+    Extraemos los costos del archivo de entrada y actualizamos el diccionario de acciones:
+    actions = {
+        ("robot-at-x1y1", "move_south"): {
+            "cost": 1,
+            "transitions": [
+                {"next_state": "robot-at-x1y1", "probability": 1}
+            ]
+        },
+        ...
+    }
+    """
+
     def __get_costs(self, rows, actions):
         costs = {}
 
@@ -66,22 +98,34 @@ class FileLoader:
             key = (state_name, action_name)
             costs[key] = cost
 
-            action_branches = actions[key]
-            actions[key] = {"cost": cost, "branches": action_branches}
+            action_transitions = actions[key]
+            actions[key] = {"cost": cost, "transitions": action_transitions}
 
             cost_index += 1
 
         return costs
+
+    """
+    Extraemos el estado inicial.
+    """
 
     def __get_initial_state(self, rows, states):
         initial_state_index = rows.index(f"initialstate\n") + 1
         state_name = rows[initial_state_index].strip()
         return states[state_name]
 
+    """
+    Extraemos el estado objetivo.
+    """
+
     def __get_goal_state(self, rows, states):
         goal_state_index = rows.index(f"goalstate\n") + 1
         state_name = rows[goal_state_index].strip()
         return states[state_name]
+
+    """
+    Actualizamos los estados con las acciones disponibles para el estado actual.
+    """
 
     def __enrich_states(self, states, actions, goal_state):
         for state_name, action_name in actions.keys():
@@ -89,12 +133,10 @@ class FileLoader:
             if states[state_name] == goal_state:
                 continue
 
-            action = Action(
-                name=action_name, cost=actions[(state_name, action_name)]["cost"]
-            )
-            for branch in actions[(state_name, action_name)]["branches"]:
-                action.add_branch(
-                    ActionBranch(
+            action = Action(name=action_name, cost=actions[(state_name, action_name)]["cost"])
+            for branch in actions[(state_name, action_name)]["transitions"]:
+                action.add_transition(
+                    Transition(
                         next_state=states[branch["next_state_name"]],
                         probability=branch["probability"],
                     )
