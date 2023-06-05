@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from entities import State, Action
+from entities import State, Action, ActionBranch
 
 
 class FileLoader:
@@ -12,15 +12,14 @@ class FileLoader:
             rows = file.readlines()
 
         states = self.__get_states(rows)
-        actions = self.__get_actions(rows, states)
-        costs = self.__get_costs(rows, actions)
+        actions = self.__get_actions(rows)
+        _ = self.__get_costs(rows, actions)
         initial_state = self.__get_initial_state(rows, states)
         goal_state = self.__get_goal_state(rows, states)
 
-        for key, val in actions.items():
-            print(key, val)
+        self.__enrich_states(states, actions, goal_state)
 
-        return states, actions, costs, initial_state, goal_state
+        return states, initial_state, goal_state
 
     def __get_states(self, rows):
         states = {}
@@ -31,7 +30,7 @@ class FileLoader:
             states[state_name] = state
         return states
 
-    def __get_actions(self, rows, states):
+    def __get_actions(self, rows):
         actions = defaultdict(list)
 
         def helper(action_name):
@@ -42,14 +41,9 @@ class FileLoader:
                 next_state_name = action_data[1]
                 probability = float(action_data[2])
 
-                action = Action(
-                    name=action_name,
-                    current_state=states[current_state_name],
-                    next_state=states[next_state_name],
-                    probability=probability,
+                actions[(current_state_name, action_name)].append(
+                    {"next_state_name": next_state_name, "probability": probability}
                 )
-                key = (current_state_name, action_name)
-                actions[key].append(action)
                 action_index += 1
 
         helper("move-south")
@@ -60,24 +54,24 @@ class FileLoader:
         return actions
 
     def __get_costs(self, rows, actions):
-        costs_map = {}
+        costs = {}
 
         cost_index = rows.index(f"cost\n") + 1
         while rows[cost_index].strip() != "endcost":
             cost_data = rows[cost_index].strip().split()
             state_name = cost_data[0]
             action_name = cost_data[1]
-            cost = cost_data[2]
+            cost = float(cost_data[2])
 
             key = (state_name, action_name)
-            costs_map[key] = cost
+            costs[key] = cost
 
-            for action in actions[key]:
-                action.cost = cost
+            action_branches = actions[key]
+            actions[key] = {"cost": cost, "branches": action_branches}
 
             cost_index += 1
 
-        return costs_map
+        return costs
 
     def __get_initial_state(self, rows, states):
         initial_state_index = rows.index(f"initialstate\n") + 1
@@ -88,3 +82,21 @@ class FileLoader:
         goal_state_index = rows.index(f"goalstate\n") + 1
         state_name = rows[goal_state_index].strip()
         return states[state_name]
+
+    def __enrich_states(self, states, actions, goal_state):
+        for state_name, action_name in actions.keys():
+            # Ignoramos el estado objetivo
+            if states[state_name] == goal_state:
+                continue
+
+            action = Action(
+                name=action_name, cost=actions[(state_name, action_name)]["cost"]
+            )
+            for branch in actions[(state_name, action_name)]["branches"]:
+                action.add_branch(
+                    ActionBranch(
+                        next_state=states[branch["next_state_name"]],
+                        probability=branch["probability"],
+                    )
+                )
+            states[state_name].add_action(action)

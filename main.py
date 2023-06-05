@@ -1,6 +1,7 @@
 import argparse
 
 from file_loader import FileLoader
+from value_iteration import ValueIteration
 
 
 def run():
@@ -30,11 +31,14 @@ def run():
         help="Valor del parámetro epsilon usado como condición de parada del algoritmo.",
     )
 
+    print("UTEC - Incertidumbre en IA - Proyecto 1")
+
     args = parser.parse_args()
     file_loader = FileLoader(args.file_path)
-    states, actions, costs, initial_state, goal_state = file_loader.load()
+    states, initial_state, goal_state = file_loader.load()
 
-    print("UTEC - Incertidumbre en IA - Proyecto 1")
+    value_iteration = ValueIteration(states, initial_state, goal_state, args.epsilon)
+    value_iteration.run()
 
 
 if __name__ == "__main__":
