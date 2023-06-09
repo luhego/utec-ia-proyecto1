@@ -22,10 +22,10 @@ class FileLoader:
         _ = self.__get_costs(rows, actions)
         initial_state = self.__get_initial_state(rows, states)
         goal_state = self.__get_goal_state(rows, states)
+        grid = self.__get_grid(rows)
+        self.__enrich_states(states, actions, goal_state, grid)
 
-        self.__enrich_states(states, actions, goal_state)
-
-        return states, initial_state, goal_state
+        return states, initial_state, goal_state, grid
 
     """
     Extraemos los estados del archivo de entrada en un diccionario con el siguiente formato:
@@ -123,11 +123,20 @@ class FileLoader:
         state_name = rows[goal_state_index].strip()
         return states[state_name]
 
+    def __get_grid(self, rows):
+        grid = []
+        grid_index = rows.index(f"Grid:\n") + 1
+        while rows[grid_index].strip() != "":
+            grid.append(list(map(int, rows[grid_index].strip().split())))
+            grid_index += 1
+        return grid
+
     """
     Actualizamos los estados con las acciones disponibles para el estado actual.
+    Adicionalmente, realizamos la conversion de coordenadas (x,y) a (row, col).
     """
 
-    def __enrich_states(self, states, actions, goal_state):
+    def __enrich_states(self, states, actions, goal_state, grid):
         for state_name, action_name in actions.keys():
             # Ignoramos el estado objetivo
             if states[state_name] == goal_state:
@@ -142,3 +151,9 @@ class FileLoader:
                     )
                 )
             states[state_name].add_action(action)
+
+        # Calculamos la fila y columna usando las coordenadas (x,y)
+        num_rows = len(grid)
+        for _, state in states.items():
+            state.row = num_rows - state.y
+            state.col = state.x - 1

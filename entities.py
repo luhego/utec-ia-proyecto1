@@ -19,6 +19,10 @@ class State:
         self.actions = []
         self.value = 0
         self.selected_action = None
+        self.x = int(name.split("x")[1].split("y")[0])
+        self.y = int(name.split("y")[1])
+        self.row = None
+        self.col = None
 
     def add_action(self, action):
         self.actions.append(action)

@@ -1,3 +1,6 @@
+import time
+
+
 class ValueIteration:
     def __init__(
         self,
@@ -18,13 +21,19 @@ class ValueIteration:
     """
 
     def run(self):
-        iteration = 1
+        start = time.time()
+
+        num_iterations = 1
         max_residual = self.__run_one_step()
         while max_residual > self.epsilon:
-            iteration += 1
+            num_iterations += 1
             max_residual = self.__run_one_step()
 
-        self.__calculate_policy()
+        self.__save_policy()
+
+        duration = time.time() - start
+
+        return self.states, num_iterations, duration
 
     """
     Corremos una iteración del algoritmo de iteración de valor de la siguiente manera:
@@ -89,9 +98,13 @@ class ValueIteration:
 
         return selected_action, new_value
 
-    def __calculate_policy(self):
+    def __save_policy(self):
+        f = open("policy.txt", "w")
         for state in self.states.values():
             if state == self.goal_state:
-                print(state.name + " goal state 0")
+                f.write(state.name + " goal state 0\n")
             else:
-                print(state.name + " " + state.selected_action.name + " " + str(state.value))
+                f.write(
+                    state.name + " " + state.selected_action.name + " " + str(state.value) + "\n"
+                )
+        f.close()

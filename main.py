@@ -2,6 +2,7 @@ import argparse
 
 from file_loader import FileLoader
 from value_iteration import ValueIteration
+from grid_drawer import GridDrawer
 
 
 def run():
@@ -35,10 +36,16 @@ def run():
 
     args = parser.parse_args()
     file_loader = FileLoader(args.file_path)
-    states, initial_state, goal_state = file_loader.load()
+    states, initial_state, goal_state, grid = file_loader.load()
 
     value_iteration = ValueIteration(states, initial_state, goal_state, args.epsilon)
-    value_iteration.run()
+    _, num_iterations, duration = value_iteration.run()
+
+    print(f"Tamaño del grid: {len(grid)}x{len(grid[0])}")
+    print(f"Número de Iteraciones: {num_iterations}")
+    print(f"Duración: {duration}")
+
+    GridDrawer(grid, states, initial_state, goal_state).draw()
 
 
 if __name__ == "__main__":
